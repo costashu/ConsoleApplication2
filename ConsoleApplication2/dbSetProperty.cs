@@ -21,6 +21,9 @@ namespace ConsoleApplication2
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long Key { get; set; }
+
+        [Required]
+        [StringLength(50)]
         public string Property { get; set; }
     }
 }
