@@ -1,73 +1,97 @@
 ﻿namespace ConsoleApplication2
 {
-	using System;
-	using System.Configuration;
-	using System.Data;
-	using System.Data.Common;
-	using System.Data.Entity;
-	using System.Data.Entity.Core.Common;
-	using System.Data.SQLite.EF6;
-	using System.Linq;
+    using System;
+    using System.Configuration;
+    using System.Data;
+    using System.Data.Common;
+    using System.Data.Entity;
+    using System.Data.Entity.Core.Common;
+    using System.Data.SQLite;
+    using System.Data.SQLite.EF6;
+    using System.Linq;
 
-	internal class Program
-	{
-		private static void Main()
-		{
-			//var connectionString = "data source=\"test.db3\"";
-			//using (var model = new Model1(connectionString))
+    class Program
+    {
+        static void Main()
+        {
+            var connectionString = @"data source = test.db3";
+            using (var connection = new SQLiteConnection(connectionString))
+            using (var model = new Model1(connection))
+            {
+                Console.WriteLine("Using EF Code First approach.");
 
-			using (var model = new Model1())
-			{
-				var dbSetProperty = model.dbSetProperty.ToList();
-				foreach (var r in dbSetProperty)
-					Console.WriteLine("{0} -- {1}", r.Key, r.Property);
-				Console.ReadKey();
-			}
-		}
-	}
+                var dbSetProperty = model.dbSetProperty.ToList();
+                foreach (var r in dbSetProperty)
+                    Console.WriteLine("{0} -- {1}", r.Key, r.Property);
+                Console.ReadKey(true);
+            }
 
-	class SqliteDbConfiguration : DbConfiguration
-	{
-		public SqliteDbConfiguration()
-		{
-			string assemblyName = typeof(SQLiteProviderFactory).Assembly.GetName().Name;
+            Console.WriteLine();
 
-			RegisterDbProviderFactories(assemblyName);
-			SetProviderFactory(assemblyName, SQLiteProviderFactory.Instance);
-			SetProviderServices(assemblyName,
-				(DbProviderServices)SQLiteProviderFactory.Instance.GetService(
-					typeof(DbProviderServices)));
-		}
+            using (var connection = new SQLiteConnection(connectionString))
+            using (var model = new Entities(connection))
+            {
+                Console.WriteLine("Using EF Database First approach.");
 
-		static void RegisterDbProviderFactories(string assemblyName)
-		{
-			var dataSet = ConfigurationManager.GetSection("system.data") as DataSet;
-			if (dataSet != null)
-			{
-				var dbProviderFactoriesDataTable = dataSet.Tables.OfType<DataTable>()
-					.First(x => x.TableName == typeof(DbProviderFactories).Name);
+                var dbSetProperty = model.dbSetProperty.ToList();
+                foreach (var r in dbSetProperty)
+                    Console.WriteLine("{0} -- {1}", r.Key, r.Property);
+                Console.ReadKey(true);
+            }
+        }
+    }
 
-				var dataRow = dbProviderFactoriesDataTable.Rows.OfType<DataRow>()
-					.FirstOrDefault(x => x.ItemArray[2].ToString() == assemblyName);
+    class SqliteDbConfiguration : DbConfiguration
+    {
+        public SqliteDbConfiguration()
+        {
+            string assemblyName = typeof (SQLiteProviderFactory).Assembly.GetName().Name;
 
-				if (dataRow != null)
-					dbProviderFactoriesDataTable.Rows.Remove(dataRow);
+            RegisterDbProviderFactories(assemblyName);
+            SetProviderFactory(assemblyName, SQLiteFactory.Instance);
+            SetProviderFactory(assemblyName, SQLiteProviderFactory.Instance);
+            SetProviderServices(assemblyName,
+                (DbProviderServices) SQLiteProviderFactory.Instance.GetService(
+                    typeof (DbProviderServices)));
+        }
 
-				dbProviderFactoriesDataTable.Rows.Add(
-					"SQLite Data Provider (Entity Framework 6)",
-					".NET Framework Data Provider for SQLite (Entity Framework 6)",
-					assemblyName,
-					typeof(SQLiteProviderFactory).AssemblyQualifiedName
-					);
-			}
-		}
-	}
+        static void RegisterDbProviderFactories(string assemblyName)
+        {
+            var dataSet = ConfigurationManager.GetSection("system.data") as DataSet;
+            if (dataSet != null)
+            {
+                var dbProviderFactoriesDataTable = dataSet.Tables.OfType<DataTable>()
+                    .First(x => x.TableName == typeof (DbProviderFactories).Name);
 
-	public partial class Model1 : DbContext
-	{
-		public Model1(string connection)
-			: base(connection)
-		{
-		}
-	}
+                var dataRow = dbProviderFactoriesDataTable.Rows.OfType<DataRow>()
+                    .FirstOrDefault(x => x.ItemArray[2].ToString() == assemblyName);
+
+                if (dataRow != null)
+                    dbProviderFactoriesDataTable.Rows.Remove(dataRow);
+
+                dbProviderFactoriesDataTable.Rows.Add(
+                    "SQLite Data Provider (Entity Framework 6)",
+                    ".NET Framework Data Provider for SQLite (Entity Framework 6)",
+                    assemblyName,
+                    typeof (SQLiteProviderFactory).AssemblyQualifiedName
+                    );
+            }
+        }
+    }
+
+    public partial class Model1
+    {
+        public Model1(DbConnection connection)
+            : base(connection, true)
+        {
+        }
+    }
+
+    public partial class Entities
+    {
+        public Entities(DbConnection connection)
+            : base(connection, true)
+        {
+        }
+    }
 }
